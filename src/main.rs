@@ -2,6 +2,7 @@ use dotenv::dotenv;
 use gemini_rs::Conversation;
 use git2::Repository;
 use std::env;
+use tokio::process::Command;
 
 async fn generate_commit_message(
     diff: &str,
@@ -51,6 +52,34 @@ fn get_diff(repo_path: &str) -> Result<String, git2::Error> {
 
     Ok(diff_str)
 }
+
+async fn commit_and_push(commit_message: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // run 'git add .'
+    let status = Command::new("git").arg("add").arg(".").status().await?;
+    if !status.success() {
+        return Err("Failed to add changes".into());
+    }
+
+    // run 'git commit -m <commit_message>'
+    let status = Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg(commit_message)
+        .status()
+        .await?;
+    if !status.success() {
+        return Err("Failed to commit changes".into());
+    }
+
+    // run 'git push'
+    let status = Command::new("git").arg("push").status().await?;
+    if !status.success() {
+        return Err("Failed to push changes".into());
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -58,7 +87,13 @@ async fn main() {
     let api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY must be set");
     match get_diff(repo_path) {
         Ok(diff) => match generate_commit_message(&diff, &api_key).await {
-            Ok(commit_message) => println!("Commit Message: {}", commit_message),
+            Ok(commit_message) => {
+                println!("Commit Message: {}", commit_message);
+                match commit_and_push(&commit_message).await {
+                    Ok(_) => println!("Changes committed and pushed successfully"),
+                    Err(e) => eprintln!("Failed to commit and push changes: {}", e),
+                }
+            }
             Err(e) => eprintln!("Failed to generate commit message: {}", e),
         },
 
