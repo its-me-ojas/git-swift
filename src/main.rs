@@ -1,8 +1,42 @@
+use dotenv::dotenv;
+use gemini_rs::Conversation;
 use git2::Repository;
+use std::env;
+
+async fn generate_commit_message(
+    diff: &str,
+    api_key: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let mut convo = Conversation::new(api_key.to_string(), "gemini-1.5-flash".to_string());
+
+    let prompt = format!(
+        "Given the following git diff, generate a concise and meaningful commit message following conventional commit standards.
+
+        Focus primarily on the logic and structural changes to the code, and briefly acknowledge any modifications to dependencies only if relevant. Ensure the commit message is clear, concise, and does not exceed 72 characters per line, following proper commit message conventions.
+
+        Here is the git diff:
+
+        {}
+
+        Return only the commit message as output, nothing else.",
+        diff
+    );
+    let response = convo.prompt(&prompt).await;
+    Ok(response.trim().to_string())
+}
 
 fn get_diff(repo_path: &str) -> Result<String, git2::Error> {
     let repo = Repository::open(repo_path)?;
-    let head = repo.head()?;
+    let head = match repo.head() {
+        Ok(head) => head,
+        Err(e) => {
+            if e.code() == git2::ErrorCode::UnbornBranch {
+                return Ok(String::from("No commits in the repository"));
+            } else {
+                return Err(e);
+            }
+        }
+    };
     let head_commit = head.peel_to_commit()?;
     let tree = head_commit.tree()?;
 
@@ -17,11 +51,18 @@ fn get_diff(repo_path: &str) -> Result<String, git2::Error> {
 
     Ok(diff_str)
 }
-
-fn main() {
+#[tokio::main]
+async fn main() {
+    dotenv().ok();
     let repo_path = ".";
+    let api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY must be set");
     match get_diff(repo_path) {
-        Ok(diff) => println!("diff: {}", diff),
+        Ok(diff) => match generate_commit_message(&diff, &api_key).await {
+            Ok(commit_message) => println!("Commit Message: {}", commit_message),
+            Err(e) => eprintln!("Failed to generate commit message: {}", e),
+        },
+
         Err(e) => println!("Error: {}", e),
     }
+    println!("")
 }
