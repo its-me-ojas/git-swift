@@ -2,6 +2,7 @@ use dotenv::dotenv;
 use gemini_rs::Conversation;
 use git2::Repository;
 use std::env;
+use std::io;
 use tokio::process::Command;
 
 async fn generate_commit_message(
@@ -11,17 +12,17 @@ async fn generate_commit_message(
     let mut convo = Conversation::new(api_key.to_string(), "gemini-1.5-flash".to_string());
 
     let prompt = format!(
-        "Given the following git diff, generate a concise and meaningful commit message following conventional commit standards.
+           "Given the following git diff, generate a concise and meaningful commit message following conventional commit standards.
 
-        Focus primarily on the logic and structural changes to the code, and briefly acknowledge any modifications to dependencies only if relevant. Ensure the commit message is clear, concise, and does not exceed 72 characters per line, following proper commit message conventions.
+           Focus primarily on the logic and structural changes to the code, and briefly acknowledge any modifications to dependencies only if relevant. Ensure the commit message is clear, concise, and does not exceed 72 characters per line, following proper commit message conventions.
 
-        Here is the git diff:
+           Here is the git diff:
 
-        {}
+           {}
 
-        Return only the commit message as output, nothing else.",
-        diff
-    );
+           Return only the commit message as output, nothing else.",
+           diff
+       );
     let response = convo.prompt(&prompt).await;
     Ok(response.trim().to_string())
 }
@@ -89,6 +90,23 @@ async fn main() {
         Ok(diff) => match generate_commit_message(&diff, &api_key).await {
             Ok(commit_message) => {
                 println!("Commit Message: {}", commit_message);
+
+                // ask user to confirm commit message
+                print!("Do you want to commit and push these changes? (y/n):");
+
+                let mut input = String::new();
+                io::stdin()
+                    .read_line(&mut input)
+                    .expect("Failed to read line");
+
+                match input.trim() {
+                    "y" => (),
+                    _ => {
+                        println!("Changes not committed");
+                        return;
+                    }
+                }
+
                 match commit_and_push(&commit_message).await {
                     Ok(_) => println!("Changes committed and pushed successfully"),
                     Err(e) => eprintln!("Failed to commit and push changes: {}", e),
