@@ -3,6 +3,7 @@ use gemini_rs::Conversation;
 use git2::Repository;
 use std::env;
 use std::io;
+use std::io::Write;
 use tokio::process::Command;
 
 async fn generate_commit_message(
@@ -93,23 +94,19 @@ async fn main() {
 
                 // ask user to confirm commit message
                 print!("Do you want to commit and push these changes? (y/n):");
+                io::stdout().flush().unwrap();
 
                 let mut input = String::new();
                 io::stdin()
                     .read_line(&mut input)
                     .expect("Failed to read line");
 
-                match input.trim() {
-                    "y" => (),
-                    _ => {
-                        println!("Changes not committed");
-                        return;
-                    }
-                }
-
-                match commit_and_push(&commit_message).await {
-                    Ok(_) => println!("Changes committed and pushed successfully"),
-                    Err(e) => eprintln!("Failed to commit and push changes: {}", e),
+                match input.trim().to_lowercase().as_str() {
+                    "y" | "yes" => match commit_and_push(&commit_message).await {
+                        Ok(_) => println!("Changes committed and pushed successfully"),
+                        Err(e) => eprintln!("Failed to commit and push changes: {}", e),
+                    },
+                    _ => println!("Operation cancelled by user"),
                 }
             }
             Err(e) => eprintln!("Failed to generate commit message: {}", e),
