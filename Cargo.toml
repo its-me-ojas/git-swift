@@ -3,6 +3,14 @@ name = "git-swift"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "git_swift"
+path = "src/lib.rs"
+
+[[bin]]
+name = "git-swift"
+path = "src/main.rs"
+
 [dependencies]
 dotenv = "0.15.0"
 gemini-rs = "0.4.2"
