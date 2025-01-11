@@ -1,3 +1,4 @@
+use clap::{Arg, Command};
 use git_swift::{
     ai::generate_commit_messages,
     cli::{confirm_commit, select_commit_message},
@@ -7,38 +8,74 @@ use git_swift::{
 
 #[tokio::main]
 async fn main() {
-    let config = Config::new().expect("Failed to load configuration");
+    let matches = Command::new("git-swift")
+        .version("1.0")
+        .author("Ojas")
+        .about("AI-powered git commit message")
+        .subcommand(
+            Command::new("setup")
+                .about("Setup git-swift with your API key")
+                .arg(
+                    Arg::new("api-key")
+                        .help("Your Gemini API key")
+                        .required(true)
+                        .index(1),
+                ),
+        )
+        .subcommand(Command::new("push").about("Generate commit message and push changes"))
+        .get_matches();
 
-    let diff = match get_diff(&config.repo_path) {
-        Ok(diff) => diff,
-        Err(e) => {
-            println!("Error: {}", e);
-            return;
+    if let Some(setup_matches) = matches.subcommand_matches("setup") {
+        let api_key = setup_matches.get_one::<String>("api-key").unwrap();
+        match Config::setup(api_key) {
+            Ok(_) => {
+                println!("API key configured successfully!");
+                return;
+            }
+            Err(e) => {
+                eprintln!("Failed to configure API key: {}", e);
+                return;
+            }
         }
-    };
+    }
 
-    let commit_messages = match generate_commit_messages(&diff, &config.api_key).await {
-        Ok(msgs) => msgs,
-        Err(e) => {
-            eprintln!("Failed to generate commit messages: {}", e);
-            return;
-        }
-    };
+    if matches.subcommand_matches("push").is_some() {
+        let config = Config::new().expect("Failed to load configuration");
 
-    let selected_message = match select_commit_message(&commit_messages) {
-        Some(msg) => msg,
-        None => {
-            println!("No commit message selected. Operation cancelled.");
-            return;
-        }
-    };
+        let diff = match get_diff(&config.repo_path) {
+            Ok(diff) => diff,
+            Err(e) => {
+                println!("Error: {}", e);
+                return;
+            }
+        };
 
-    if confirm_commit().await {
-        match commit_and_push(&selected_message).await {
-            Ok(_) => println!("Changes committed and pushed successfully"),
-            Err(e) => eprintln!("Failed to commit and push changes: {}", e),
+        let commit_messages = match generate_commit_messages(&diff, &config.api_key).await {
+            Ok(msgs) => msgs,
+            Err(e) => {
+                eprintln!("Failed to generate commit messages: {}", e);
+                return;
+            }
+        };
+
+        let selected_message = match select_commit_message(&commit_messages) {
+            Some(msg) => msg,
+            None => {
+                println!("No commit message selected. Operation cancelled.");
+                return;
+            }
+        };
+
+        if confirm_commit().await {
+            match commit_and_push(&selected_message).await {
+                Ok(_) => println!("Changes committed and pushed successfully"),
+                Err(e) => eprintln!("Failed to commit and push changes: {}", e),
+            }
+        } else {
+            println!("Operation cancelled by user");
         }
-    } else {
-        println!("Operation cancelled by user");
+    } else if !matches.subcommand_matches("setup").is_some() {
+        println!("Use 'git-swift push' to commit and push changes");
+        println!("Or 'git-swift setup <API_KEY>' to configure the API key");
     }
 }

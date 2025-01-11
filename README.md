@@ -4,10 +4,11 @@ Git-Swift is a Rust-based tool that automates the process of generating commit m
 
 ## Features
 
-- Automatically detects changes in the repository.
-- Generates commit messages using the Gemini API.
-- Commits the changes with the generated commit message.
-- Pushes the commit to the remote repository.
+- Automatically detects changes in the repository
+- Generates multiple AI-powered commit message options using the Gemini API
+- Allows selection from multiple commit message options
+- Commits the changes with the selected message
+- Pushes the commit to the remote repository
 
 ## Prerequisites
 
@@ -18,69 +19,82 @@ Git-Swift is a Rust-based tool that automates the process of generating commit m
 ## Installation
 
 1. Clone the repository:
-
 ```sh
 git clone https://github.com/its-me-ojas/git-swift.git
 cd git-swift
 ```
 
-2. Set up your environment variables by creating a `.env` file in the project directory with the following content:
-
-```
-GEMINI_API_KEY=your-gemini-api-key
-```
-
-3. Install the required Rust dependencies and build the project:
-
+2. Build and install the project:
 ```sh
 cargo build --release
 ```
 
-## Usage
-
-### Using the Binary Globally
-
-To use the binary globally in any repository, follow these steps:
-
-1. Build the project to create the binary:
-
-```sh
-cargo build --release
-```
-
-2. Move the binary to a directory that is in your system's `PATH`. For example, you can move it to `/usr/local/bin`:
-
+3. Move the binary to a directory in your system's `PATH`:
 ```sh
 sudo mv target/release/git-swift /usr/local/bin/
 ```
 
-3. Now you can use the `git-swift` command in any initialized Git repository. Navigate to the root directory of your Git repository and run:
+## Setup
+
+Before using git-swift, you need to configure your Gemini API key:
 
 ```sh
-git-swift
+git-swift setup YOUR_API_KEY
 ```
 
-The tool will:
+This will store your API key securely in `~/.git-swift/config`.
 
-- Detect changes in the repository.
-- Generate a commit message using the Gemini API.
-- Commit the changes with the generated commit message.
-- Push the commit to the remote repository.
+## Usage
 
-## Example
+Git-Swift provides two main commands:
 
-Here's an example of how to use Git-Swift:
-
-1. Make some changes to your repository.
-
-2. Run the tool:
-
+1. Setup your API key:
 ```sh
-git-swift
+git-swift setup YOUR_API_KEY
 ```
 
-3. The tool will output the generated commit message and push the changes to the remote repository.
+2. Generate commit message and push changes:
+```sh
+git-swift push
+```
+
+When you run `git-swift push`, the tool will:
+1. Detect changes in your repository
+2. Generate multiple commit message options using AI
+3. Let you select your preferred message
+4. Ask for confirmation before committing
+5. Commit and push the changes
+
+## Example Workflow
+
+1. Make some changes to your repository
+
+2. Run git-swift:
+```sh
+git-swift push
+```
+
+3. Select from the generated commit message options
+
+4. Confirm the commit and push
+
+The tool will then commit your changes with the selected message and push them to the remote repository.
+
+## Help
+
+To see available commands and options:
+```sh
+git-swift --help
+```
+
+## Configuration
+
+The API key is stored in `~/.git-swift/config`. You can update it at any time by running the setup command again with a new API key.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request if you have any improvements or bug fixes.
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+
+## Author
+
+Ojas - [its-me-ojas](https://github.com/its-me-ojas)
