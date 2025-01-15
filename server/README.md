@@ -35,6 +35,21 @@ You can change the port that the server runs on by change the following field in
 PORT=YOUR_PORT_HERE
 ```
 
+## Usage
+
+- Make POST request to /commit_message with the following json body -
+```sh
+{
+    "diff": "Commit difference here"
+}
+```
+- The response is a json object with the following structure -
+```sh
+{
+    "messages": ["The 3 commit messages"]
+}
+```
+
 ## Author
 
 Tarush Mohindru - [tarushmohindru](http://github.com/tarushmohindru)
