@@ -21,7 +21,7 @@ Git-Swift is a Rust-based tool that automates the process of generating commit m
 1. Clone the repository:
 ```sh
 git clone https://github.com/its-me-ojas/git-swift.git
-cd git-swift
+cd git-swift/git_swift
 ```
 
 2. Build and install the project:
