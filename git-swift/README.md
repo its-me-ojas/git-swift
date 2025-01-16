@@ -34,16 +34,6 @@ cargo build --release
 sudo mv target/release/git-swift /usr/local/bin/
 ```
 
-## Setup
-
-Before using git-swift, you need to configure your Gemini API key:
-
-```sh
-git-swift setup YOUR_API_KEY
-```
-
-This will store your API key securely in `~/.git-swift/config`.
-
 ## Usage
 
 Git-Swift provides two main commands:

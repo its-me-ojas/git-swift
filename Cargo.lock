@@ -440,6 +440,8 @@ dependencies = [
  "dotenv",
  "gemini-rs",
  "git2",
+ "reqwest",
+ "serde",
  "tokio",
 ]
 
