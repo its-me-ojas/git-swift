@@ -1,9 +1,6 @@
 use clap::{Arg, Command};
 use git_swift::{
-    ai::generate_commit_messages,
-    cli::{confirm_commit, select_commit_message},
-    git::{commit_and_push, get_diff},
-    utils::Config,
+    cli::{confirm_commit, select_commit_message}, fetch_commit_messages, git::{commit_and_push, get_diff}, utils::Config
 };
 
 #[tokio::main]
@@ -49,9 +46,9 @@ async fn main() {
                 return;
             }
         };
-
-        let commit_messages = match generate_commit_messages(&diff, &config.api_key).await {
-            Ok(msgs) => msgs,
+      
+        let commit_messages = match fetch_commit_messages(&diff).await {
+            Ok(msgs) => msgs.messages,
             Err(e) => {
                 eprintln!("Failed to generate commit messages: {}", e);
                 return;
