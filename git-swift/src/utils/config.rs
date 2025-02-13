@@ -49,7 +49,7 @@ impl Config {
 
         Ok(Config {
             api_key,
-            repo_path: String::from("."),
+            repo_path: String::from("./"),
         })
     }
 

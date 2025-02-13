@@ -3,20 +3,12 @@ name = "git-swift"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "git_swift"
-path = "src/lib.rs"
-
-[[bin]]
-name = "git-swift"
-path = "src/main.rs"
-
 [dependencies]
 clap = "4.5.26"
 dirs = "5.0.1"
 dotenv = "0.15.0"
 gemini-rs = "0.4.2"
 git2 = "0.20.0"
-reqwest = {version = "0.12.12", features = ["json"]}
+reqwest = { version = "0.12.12", features = ["json"] }
 serde = { version = "1.0.217", features = ["derive"] }
 tokio = { version = "1.43.0", features = ["full"] }

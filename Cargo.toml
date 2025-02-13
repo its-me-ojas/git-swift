@@ -1,3 +1,0 @@
-[workspace]
-members = ["git-swift", "server"]
-resolver = "2"
