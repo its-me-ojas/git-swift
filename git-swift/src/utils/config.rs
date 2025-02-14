@@ -26,7 +26,7 @@ impl Config {
         }
 
         Ok(Config {
-            repo_path: String::from("../../test-repo"),
+            repo_path: String::from("./"),
         })
     }
 }
