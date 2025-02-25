@@ -1,0 +1,10 @@
+/home/crestfallen/Documents/projects/git-swift/target/release/deps/librustls_pki_types-4d0110afc48cb9a2.rmeta: /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/lib.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/base64.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/server_name.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/pem.rs
+
+/home/crestfallen/Documents/projects/git-swift/target/release/deps/librustls_pki_types-4d0110afc48cb9a2.rlib: /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/lib.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/base64.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/server_name.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/pem.rs
+
+/home/crestfallen/Documents/projects/git-swift/target/release/deps/rustls_pki_types-4d0110afc48cb9a2.d: /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/lib.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/base64.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/server_name.rs /home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/pem.rs
+
+/home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/lib.rs:
+/home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/base64.rs:
+/home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/server_name.rs:
+/home/crestfallen/.cargo/registry/src/index.crates.io-6f17d22bba15001f/rustls-pki-types-1.10.1/src/pem.rs:
