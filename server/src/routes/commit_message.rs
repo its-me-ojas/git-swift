@@ -42,7 +42,7 @@ pub async fn generate_commit_messages(diff: &str, api_key: &str) -> Result<Vec<S
         Just provide the commit messages directly, separated by '---' on a new line.
 
         IMPORTANT:
-        Make sure each message follows the conventional commit format and is ready to be used directly.
+        Make sure each message follows the conventional/standard commit format and is ready to be used directly.
 
         Git Diff:
         {}
