@@ -1,19 +1,9 @@
-version: "3.8"
-
+version: '3.8'
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  gitswift-server:
+    image: gitswift/server
+    build: .
     ports:
-      - "5000:5000"
-    environment:
-      - RUST_LOG=info
-      - GROQ_API_KEY=${GROQ_API_KEY}
-    env_file:
-      - .env
-    restart: unless-stopped
-
-networks:
-  default:
-    driver: bridge
+      - "3777:5000"
+    container_name: gitswift-server-container
+    restart: always
