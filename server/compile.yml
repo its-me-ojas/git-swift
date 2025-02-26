@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  rust-builder:
+    image: rust:alpine
+    container_name: rust-ssl-builder
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - OPENSSL_DIR=/usr
+      - OPENSSL_STATIC=1
+      - PKG_CONFIG_ALLOW_CROSS=1
+    command: >
+      sh -c "apk add --no-cache musl-dev openssl-dev openssl-libs-static pkgconf &&
+             cargo build --release --target=x86_64-unknown-linux-musl"

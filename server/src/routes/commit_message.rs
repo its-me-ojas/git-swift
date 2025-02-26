@@ -51,7 +51,7 @@ pub async fn generate_commit_messages(diff: &str, api_key: &str) -> Result<Vec<S
     );
 
     let request_body = GroqRequest {
-        model: "llama-3.1-8b-instant".to_string(),
+        model: "llama-3.3-70b-versatile".to_string(),
         messages: vec![Message {
             role: "user".to_string(),
             content: prompt,

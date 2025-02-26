@@ -19,9 +19,9 @@ This server is built to accept requests from the git-swift cli and respond with 
 git clone https://github.com/its-me-ojas/git-swift.git
 cd git-swift/server
 ```
-2. Run the server:
+2. Build the server:
 ```sh
-cargo run
+ docker compose -f compile.yml up --build 
 ```
 
 ## Setup
