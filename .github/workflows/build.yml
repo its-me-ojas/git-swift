@@ -56,10 +56,9 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3
+          brew install openssl@3 rustup-init pkg-config
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
-          # Explicitly install and link needed build tools
-          brew install rustup-init pkg-config
+          echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -70,11 +69,10 @@ jobs:
       - name: Build Rust project
         run: cargo build --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
         env:
-          # For macOS cross-compilation
           PKG_CONFIG_ALLOW_CROSS: 1
 
       - name: Package Debian (.deb)
-        if: matrix.package_type == 'deb' && success()
+        if: matrix.package_type == 'deb'
         run: |
           cargo install cargo-deb --force
           cargo deb --target ${{ matrix.target }} --manifest-path app/Cargo.toml
@@ -82,7 +80,7 @@ jobs:
           DEB_BUILD_OPTIONS: nocheck
 
       - name: Package Windows (.exe/.msi)
-        if: matrix.package_type == 'windows' && success()
+        if: matrix.package_type == 'windows'
         run: |
           cargo install cargo-wix --force
           cd app
@@ -91,19 +89,19 @@ jobs:
         shell: bash
 
       - name: Package macOS (.dmg)
-        if: matrix.package_type == 'mac' && success()
+        if: matrix.package_type == 'mac'
         run: |
           cargo install cargo-bundle --force
           cargo bundle --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
-          PKG_CONFIG_ALLOW_CROSS: 1
-          # Ensure OpenSSL is found during bundle process
+          MACOSX_DEPLOYMENT_TARGET: 10.12
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
+          OPENSSL_LIB_DIR: ${{ env.OPENSSL_DIR }}/lib
+          OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_DIR }}/include
 
       - name: Upload Artifacts
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.os }}

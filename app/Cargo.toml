@@ -2,6 +2,26 @@
 name = "gitswift"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "Ojas <crestfallenwizard@gmail.com>",
+    "Tarush Mohindru <second.author@example.com>",
+    "Hushraj Singh <hushraj.singh@ccstiet.com>"
+]
+license = "MIT"
+description = "A Git tool with AI capabilities"
+repository = "https://github.com/its-me-ojas/git-swift"
+
+
+[package.metadata.deb]
+maintainer = "Ojas <crestfallenwizard@gmail.com>"
+copyright = "Copyright (c) 2025"
+license-file = "../LICENSE"
+depends = "$auto"
+section = "utils"
+priority = "optional"
+
+[package.metadata.wix]
+eula = "../LICENSE.rtf"
 
 [dependencies]
 clap = "4.5.26"
