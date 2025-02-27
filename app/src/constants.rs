@@ -1,0 +1,1 @@
+pub const SERVER_URL: &str = "https://api-gitswift.ccstiet.com";

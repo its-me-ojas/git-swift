@@ -1,5 +1,5 @@
 [package]
-name = "git-swift"
+name = "gitswift"
 version = "0.1.0"
 edition = "2021"
 

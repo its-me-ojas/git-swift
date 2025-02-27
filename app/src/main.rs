@@ -1,5 +1,5 @@
 use clap::Command;
-use git_swift::{
+use gitswift::{
     ai::fetch_commit_messages,
     cli::{confirm_commit, select_commit_message},
     git::{commit_and_push, get_diff},
