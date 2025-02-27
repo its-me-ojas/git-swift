@@ -8,9 +8,9 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    continue-on-error: true  # Allow other matrix jobs to continue if one fails
+    continue-on-error: true
     strategy:
-      fail-fast: false  # Don't fail all jobs if one fails
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
@@ -50,15 +50,19 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev libssl-dev
+          sudo apt-get install -y dpkg-dev libssl-dev pkg-config
 
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3 rustup-init pkg-config
+          brew install openssl@3 rustup-init pkg-config llvm
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
+          echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -67,7 +71,7 @@ jobs:
           choco install openssl -y
 
       - name: Build Rust project
-        run: cargo build --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+        run: cargo build --release --locked --target ${{ matrix.target }} --manifest-path app/Cargo.toml
         env:
           PKG_CONFIG_ALLOW_CROSS: 1
 
@@ -84,8 +88,7 @@ jobs:
         run: |
           cargo install cargo-wix --force
           cd app
-          cargo wix init
-          cargo wix --release --target ${{ matrix.target }}
+          cargo wix -- --release --target ${{ matrix.target }}
         shell: bash
 
       - name: Package macOS (.dmg)
@@ -98,8 +101,10 @@ jobs:
           BUNDLE_NAME: gitswift
           MACOSX_DEPLOYMENT_TARGET: 10.12
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
-          OPENSSL_LIB_DIR: ${{ env.OPENSSL_DIR }}/lib
-          OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_DIR }}/include
+          OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
+          OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
+          CC: ${{ env.CC }}
+          CXX: ${{ env.CXX }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -107,5 +112,5 @@ jobs:
           name: packages-${{ matrix.os }}
           path: |
             app/target/${{ matrix.target }}/release/*.deb
-            app/target/wix/msi/*.msi
+            target/wix/*.msi
             app/target/release/bundle/dmg/*.dmg
