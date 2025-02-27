@@ -102,7 +102,9 @@ jobs:
         if: matrix.package_type == 'windows'
         run: |
           cargo install cargo-wix --force
-          cargo wix -- --release --target ${{ matrix.target }}  --manifest-path app/Cargo.toml
+          cd app
+          cargo wix init
+          cargo wix 
         shell: bash
 
       - name: Package macOS (.dmg)
@@ -110,7 +112,7 @@ jobs:
         run: |
           cd app
           cargo install cargo-bundle --force
-          cargo bundle --release --target ${{ matrix.target }}
+          cargo bundle --release --target ${{ matrix.target }} --format dmg
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
@@ -127,5 +129,5 @@ jobs:
           name: packages-${{ matrix.os }}
           path: |
             app/target/${{ matrix.target }}/debian/*.deb
-            target/wix/*.msi
-            app/target/release/bundle/dmg/*.dmg
+            app/target/wix/*.msi
+            app/target/aarch64-apple-darwin/release/bundle/osx/*.dmg
