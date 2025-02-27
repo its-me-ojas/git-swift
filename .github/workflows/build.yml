@@ -1,0 +1,85 @@
+name: Build and Package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            package_type: deb
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            package_type: windows
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            package_type: mac
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install rustup-init
+
+      - name: Install dependencies (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install wixtoolset -y
+
+      - name: Build Rust project
+        run: cargo build --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+
+      - name: Package Debian (.deb)
+        if: matrix.package_type == 'deb'
+        run: |
+          cargo install cargo-deb
+          cargo deb --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+        env:
+          DEB_BUILD_OPTIONS: nocheck
+
+      - name: Package Windows (.exe/.msi)
+        if: matrix.package_type == 'windows'
+        run: |
+          cargo install cargo-wix
+          cd app
+          cargo wix init
+          cargo wix --release --target ${{ matrix.target }}
+        shell: bash
+
+      - name: Package macOS (.dmg)
+        if: matrix.package_type == 'mac'
+        run: |
+          cargo install cargo-bundle
+          cargo bundle --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+        env:
+          BUNDLE_ID: com.example.my-app
+          BUNDLE_NAME: MyApp
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: packages-${{ matrix.os }}
+          path: |
+            app/target/${{ matrix.target }}/release/*.deb
+            app/target/wix/msi/*.msi
+            app/target/release/bundle/dmg/*.dmg
