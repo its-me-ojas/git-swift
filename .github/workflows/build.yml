@@ -56,11 +56,13 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3 pkg-config
+          brew install openssl@3 rustup-init pkg-config llvm
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
           echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -68,19 +70,31 @@ jobs:
           choco install wixtoolset -y
           choco install openssl -y
 
-      - name: Build Rust project
-        run: cargo build --release --locked --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+
+      - name: Build Rust project (Windows/Linux)
+        if: matrix.package_type != 'mac'
+        run: |
+          cargo build --release --locked --target ${{ matrix.target }}  --manifest-path app/Cargo.toml
+        env:
+          PKG_CONFIG_ALLOW_CROSS: 1
+
+      - name: Build Rust project (macOS)
+        if: matrix.package_type == 'mac'
+        run: |
+          cargo build --release --locked --target ${{ matrix.target }}  --manifest-path app/Cargo.toml
         env:
           PKG_CONFIG_ALLOW_CROSS: 1
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
           OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
           OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
+          
+          
 
       - name: Package Debian (.deb)
         if: matrix.package_type == 'deb'
         run: |
           cargo install cargo-deb --force
-          cargo deb --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+          cargo deb --target ${{ matrix.target }}  --manifest-path app/Cargo.toml
         env:
           DEB_BUILD_OPTIONS: nocheck
 
@@ -88,22 +102,24 @@ jobs:
         if: matrix.package_type == 'windows'
         run: |
           cargo install cargo-wix --force
-          cd app
-          cargo wix --release
+          cargo wix -- --release --target ${{ matrix.target }}  --manifest-path app/Cargo.toml
         shell: bash
 
       - name: Package macOS (.dmg)
         if: matrix.package_type == 'mac'
         run: |
+          cd app
           cargo install cargo-bundle --force
-          cargo bundle --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
+          cargo bundle --release --target ${{ matrix.target }}
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
-          MACOSX_DEPLOYMENT_TARGET: 11.0
+          MACOSX_DEPLOYMENT_TARGET: 10.12
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
           OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
           OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
+          CC: ${{ env.CC }}
+          CXX: ${{ env.CXX }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
@@ -111,5 +127,5 @@ jobs:
           name: packages-${{ matrix.os }}
           path: |
             app/target/${{ matrix.target }}/debian/*.deb
-            app/target/wix/*.msi
+            target/wix/*.msi
             app/target/release/bundle/dmg/*.dmg
