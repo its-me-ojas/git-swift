@@ -21,7 +21,7 @@ section = "utils"
 priority = "optional"
 
 [package.metadata.wix]
-eula = "../LICENSE.rtf"
+eula = "../LICENSE"
 
 [dependencies]
 clap = "4.5.26"

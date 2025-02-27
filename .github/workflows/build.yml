@@ -56,7 +56,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3 rustup-init pkg-config llvm
+          brew install openssl@3 rustup-init pkg-config llvm create-dmg
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
           echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
@@ -104,7 +104,8 @@ jobs:
           cargo install cargo-wix --force
           cd app
           cargo wix init
-          cargo wix 
+          cargo wix
+          cd ..
         shell: bash
 
       - name: Package macOS (.dmg)
@@ -112,7 +113,8 @@ jobs:
         run: |
           cd app
           cargo install cargo-bundle --force
-          cargo bundle --release --target ${{ matrix.target }} --format dmg
+          cargo bundle --release --target ${{ matrix.target }} 
+          cd ..
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
@@ -123,11 +125,26 @@ jobs:
           CC: ${{ env.CC }}
           CXX: ${{ env.CXX }}
 
+      - name: Convert .app to .dmg
+        if: matrix.package_type == 'mac'
+        run: |
+          mkdir -p dist
+          create-dmg \
+            --overwrite \
+            --dmg-title="GitSwift Installer" \
+            "app/target/aarch64-apple-darwin/release/bundle/osx/gitswift.app" \
+            "dist/"
+
+
+      - name: Move Files to Artifact Directory
+        run: |
+          mkdir -p artifacts
+          mv app/target/${{ matrix.target }}/debian/*.deb artifacts/
+          mv app/target/wix/*.msi artifacts/
+          mv dist/*.dmg artifacts/
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.os }}
-          path: |
-            app/target/${{ matrix.target }}/debian/*.deb
-            app/target/wix/*.msi
-            app/target/aarch64-apple-darwin/release/bundle/osx/*.dmg
+          path: artifacts/*
