@@ -95,6 +95,9 @@ jobs:
         run: |
           cargo install cargo-deb --force
           cargo deb --target ${{ matrix.target }}  --manifest-path app/Cargo.toml
+          mkdir -p artifacts
+          mv app/target/${{ matrix.target }}/debian/*.deb artifacts/
+
         env:
           DEB_BUILD_OPTIONS: nocheck
 
@@ -106,6 +109,8 @@ jobs:
           cargo wix init
           cargo wix
           cd ..
+          mkdir -p artifacts
+          mv app/target/wix/*.msi artifacts/
         shell: bash
 
       - name: Package macOS (.dmg)
@@ -130,18 +135,12 @@ jobs:
         run: |
           mkdir -p dist
           create-dmg \
-            --overwrite \
-            --dmg-title="GitSwift Installer" \
+            --volname="GitSwift Installer" \
             "app/target/aarch64-apple-darwin/release/bundle/osx/gitswift.app" \
             "dist/"
-
-
-      - name: Move Files to Artifact Directory
-        run: |
           mkdir -p artifacts
-          mv app/target/${{ matrix.target }}/debian/*.deb artifacts/
-          mv app/target/wix/*.msi artifacts/
           mv dist/*.dmg artifacts/
+
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
