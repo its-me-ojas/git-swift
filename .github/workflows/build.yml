@@ -134,10 +134,7 @@ jobs:
         if: matrix.package_type == 'mac'
         run: |
           mkdir -p dist
-          create-dmg \
-            --volname="GitSwift Installer" \
-            "app/target/aarch64-apple-darwin/release/bundle/osx/gitswift.app" \
-            "dist/"
+          create-dmg "app/target/aarch64-apple-darwin/release/bundle/osx/gitswift.app" "dist/"
           mkdir -p artifacts
           mv dist/*.dmg artifacts/
 
