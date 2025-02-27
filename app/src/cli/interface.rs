@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 pub async fn confirm_commit() -> bool {
-    print!("Do you want to commit and push these changes? (y/n): ");
+    print!("Do you want to commit and push these changes? [Y/n]: ");
     io::stdout().flush().unwrap();
 
     let mut input = String::new();
@@ -9,7 +9,12 @@ pub async fn confirm_commit() -> bool {
         .read_line(&mut input)
         .expect("Failed to read line");
 
-    matches!(input.trim().to_lowercase().as_str(), "y" | "yes")
+    if input.trim().to_lowercase().as_str() == "y" || input.trim().to_lowercase().as_str() == "yes" || input.trim().to_lowercase().as_str() == "" {
+        println!("Pushing to remote repository");
+        return true;
+    }
+    println!("Operation cancelled by User!");
+    return false
 }
 
 pub fn select_commit_message(messages: &[String]) -> Option<String> {
