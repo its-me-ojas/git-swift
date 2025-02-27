@@ -21,7 +21,7 @@ jobs:
             target: x86_64-pc-windows-gnu
             package_type: windows
           - os: macos-latest
-            target: x86_64-apple-darwin
+            target: aarch64-apple-darwin
             package_type: mac
 
     steps:
@@ -56,13 +56,11 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3 rustup-init pkg-config llvm
+          brew install openssl@3 pkg-config
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
           echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
-          echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
-          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
       - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -74,6 +72,9 @@ jobs:
         run: cargo build --release --locked --target ${{ matrix.target }} --manifest-path app/Cargo.toml
         env:
           PKG_CONFIG_ALLOW_CROSS: 1
+          OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
+          OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
+          OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
 
       - name: Package Debian (.deb)
         if: matrix.package_type == 'deb'
@@ -88,7 +89,7 @@ jobs:
         run: |
           cargo install cargo-wix --force
           cd app
-          cargo wix -- --release --target ${{ matrix.target }}
+          cargo wix --release
         shell: bash
 
       - name: Package macOS (.dmg)
@@ -99,18 +100,16 @@ jobs:
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
-          MACOSX_DEPLOYMENT_TARGET: 10.12
+          MACOSX_DEPLOYMENT_TARGET: 11.0
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
           OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
           OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
-          CC: ${{ env.CC }}
-          CXX: ${{ env.CXX }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.os }}
           path: |
-            app/target/${{ matrix.target }}/release/*.deb
-            target/wix/*.msi
+            app/target/${{ matrix.target }}/debian/*.deb
+            app/target/wix/*.msi
             app/target/release/bundle/dmg/*.dmg
