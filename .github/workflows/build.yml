@@ -1,7 +1,9 @@
 name: Build and Package
-
+description: Build and package the application
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -22,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -41,10 +43,12 @@ jobs:
           brew update
           brew install rustup-init
 
-      - name: Install dependencies (windows)
+      - name: Install dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           choco install wixtoolset -y
+          rustup target add x86_64-pc-windows-gnu
+          rustup install stable-x86_64-pc-windows-gnu
 
       - name: Build Rust project
         run: cargo build --release --target ${{ matrix.target }} --manifest-path app/Cargo.toml
@@ -57,12 +61,11 @@ jobs:
         env:
           DEB_BUILD_OPTIONS: nocheck
 
-      - name: Package Windows (.exe/.msi)
+      - name: Package Windows (.msi)
         if: matrix.package_type == 'windows'
         run: |
           cargo install cargo-wix
           cd app
-          cargo wix init
           cargo wix --release --target ${{ matrix.target }}
         shell: bash
 
@@ -76,10 +79,10 @@ jobs:
           BUNDLE_NAME: MyApp
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.os }}
           path: |
             app/target/${{ matrix.target }}/release/*.deb
-            app/target/wix/msi/*.msi
+            app/target/wix/*.msi
             app/target/release/bundle/dmg/*.dmg
