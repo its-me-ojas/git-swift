@@ -56,7 +56,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3 rustup-init pkg-config llvm create-dmg
+          brew install openssl@3 rustup-init pkg-config llvm
+          xcode-select --install
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
           echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
@@ -113,30 +114,21 @@ jobs:
           mv app/target/wix/*.msi artifacts/
         shell: bash
 
-      - name: Package macOS (.dmg)
+      - name: Package macOS (.pkg)
         if: matrix.package_type == 'mac'
         run: |
-          cd app
-          cargo install cargo-bundle --force
-          cargo bundle --release --target ${{ matrix.target }} 
-          cd ..
+          mkdir -p ~/gitswift-installer/user/local/bin
+          cp app/target/${{ matrix.target }}/release/gitswift ~/gitswift-installer/user/local/bin/
+          pkgbuild --identifier com.singhropar.gitswift --version 1.0 --install-location/ --root ~/gitswift-installer artifacts/gitswift.pkg 
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
-          MACOSX_DEPLOYMENT_TARGET: 10.12
+          MACOSX_DEPLOYMENT_TARGET: 11.0
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
           OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
           OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
           CC: ${{ env.CC }}
           CXX: ${{ env.CXX }}
-
-      - name: Convert .app to .dmg
-        if: matrix.package_type == 'mac'
-        run: |
-          mkdir -p dist
-          create-dmg "app/target/aarch64-apple-darwin/release/bundle/osx/gitswift.app" "dist/"
-          mkdir -p artifacts
-          mv dist/*.dmg artifacts/
 
 
       - name: Upload Artifacts
