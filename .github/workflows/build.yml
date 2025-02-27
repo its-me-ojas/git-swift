@@ -117,8 +117,9 @@ jobs:
         if: matrix.package_type == 'mac'
         run: |
           mkdir -p ~/gitswift-installer/user/local/bin
+          mkdir -p artifacts
           cp app/target/${{ matrix.target }}/release/gitswift ~/gitswift-installer/user/local/bin/
-          pkgbuild --identifier com.singhropar.gitswift --version 1.0 --install-location/ --root ~/gitswift-installer artifacts/gitswift.pkg 
+          pkgbuild --identifier com.singhropar.gitswift --version 1.0 --install-location / --root ~/gitswift-installer artifacts/gitswift.pkg 
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
