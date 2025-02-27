@@ -8,7 +8,7 @@ use gitswift::{
 
 #[tokio::main]
 async fn main() {
-    let matches = Command::new("git-swift")
+    let matches = Command::new("gitswift")
         .version("1.0")
         .author("Ojas")
         .about("AI-powered git commit message")
@@ -51,6 +51,6 @@ async fn main() {
             println!("Operation cancelled by user");
         }
     } else {
-        println!("Use 'git-swift push' to commit and push changes");
+        println!("Use 'gitswift push' to commit and push changes");
     }
 }

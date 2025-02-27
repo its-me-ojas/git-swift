@@ -6,6 +6,7 @@ pub async fn fetch_commit_messages(diff: &str) -> Result<ApiResponse, Box<dyn st
     let mut map = HashMap::new();
     map.insert("diff", diff);
     let client = reqwest::Client::new();
+    println!("Fetching Commit Message from Server!");
     let resp = client
         .post(format!("{}/commit_message", SERVER_URL))
         .json(&map)
