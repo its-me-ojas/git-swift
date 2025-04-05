@@ -1,6 +1,6 @@
 # Git-Swift
 
-Git-Swift is a CLI tool that generates AI-powered commit messages using Groq's language models.
+Git-Swift is a solution powering developers to don't worry at all about version control as our advanced AI solution is the one handling all that work.
 
 ## Features
 
