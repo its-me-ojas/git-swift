@@ -22,21 +22,39 @@ async fn hello_controller() -> Result<Json<Value>> {
 }
 
 async fn generate_commit_message(payload: Json<RequestPayload>) -> Result<Json<Value>> {
-    let api_key = env::var("GROQ_API_KEY").expect("API key not found.");
+    let api_key = env::var("GROQ_API_KEY").map_err(|e| {
+        eprintln!("Failed to get GROQ_API_KEY: {}", e);
+        crate::errors::Error::UnableToGenerateCommitMessage
+    })?;
+    
     let commit_messages = generate_commit_messages(&payload.diff, &api_key).await;
     match commit_messages {
         Ok(messages) => Ok(Json(json!({ "messages": messages }))),
-        Err(_) => Err(crate::errors::Error::UnableToGenerateCommitMessage),
+        Err(e) => {
+            eprintln!("Failed to generate commit messages: {:?}", e);
+            Err(e)
+        }
     }
 }
 
 pub async fn generate_commit_messages(diff: &str, api_key: &str) -> Result<Vec<String>> {
     let client = reqwest::Client::new();
+    let models = vec![
+        "gemma2-9b-it",
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant"
+    ];
+    
+    let mut all_messages = Vec::new();
 
     let mut headers = HeaderMap::new();
     headers.insert(
         AUTHORIZATION,
-        HeaderValue::from_str(&format!("Bearer {}", api_key)).unwrap(),
+        HeaderValue::from_str(&format!("Bearer {}", api_key))
+            .map_err(|e| {
+                eprintln!("Header error: {}", e);
+                crate::errors::Error::UnableToGenerateCommitMessage
+            })?
     );
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 
@@ -47,60 +65,66 @@ pub async fn generate_commit_messages(diff: &str, api_key: &str) -> Result<Vec<S
         ",
         diff
     );
-    let system_prompt = "You are an AI tool that is deployed to analyze the git diff given as prompt by the user and generate 3 different commit messages,
-    each adhering to conventional commit message standards (e.g., 50-character summary line, followed by a detailed body if necessary).
-
-    Each message should have a different focus/perspective but don't include any headers or labels for the options.
-    Just provide the commit messages directly, separated by '---' on a new line.
-
-    Use prefixes like Fix: Refreactor: Feat: Chore: Docs: etc. as needed.
+    let system_prompt = "You are an AI tool that analyzes git diffs and generates commit messages.
+    Generate a single commit message that follows conventional commit message standards (e.g., 50-character summary line, followed by a detailed body if necessary).
+    
+    Use prefixes like Fix: Refactor: Feat: Chore: Docs: etc. as needed.
 
     IMPORTANT:
-    Make sure each message follows the conventional/standard commit format and is ready to be used directly.
+    Make sure the message follows the conventional/standard commit format and is ready to be used directly.
+    Don't give any explanation or meta-commentary about the message.
     ";
 
+    for model in models {
+        println!("Trying model: {}", model);  // Debug log
+        
+        let request_body = GroqRequest {
+            model: model.to_string(),
+            messages: vec![
+                Message {
+                    role: "system".to_string(),
+                    content: system_prompt.to_string(),
+                },
+                Message {
+                    role: "user".to_string(),
+                    content: prompt.clone(),
+                }
+            ],
+            temperature: 0.5,
+        };
 
-    let request_body = GroqRequest {
-        model: "gemma2-9b-it".to_string(),
-        messages: vec![
-            Message {
-                role: "system".to_string(),
-                content: system_prompt.to_string(),
-            },
-            Message {
-                role: "user".to_string(),
-                content: prompt,
-            }
-        ],
-        temperature: 0.5,
-    };
+        let response = client
+            .post("https://api.groq.com/openai/v1/chat/completions")
+            .headers(headers.clone())
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| {
+                eprintln!("API request error for model {}: {}", model, e);
+                crate::errors::Error::UnableToGenerateCommitMessage
+            })?;
 
-    let response = client
-        .post("https://api.groq.com/openai/v1/chat/completions")
-        .headers(headers)
-        .json(&request_body)
-        .send()
-        .await
-        .map_err(|_| crate::errors::Error::UnableToGenerateCommitMessage)?;
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| {
+                eprintln!("Failed to get response text for model {}: {}", model, e);
+                crate::errors::Error::UnableToGenerateCommitMessage
+            })?;
 
-    let response_text = response
-        .text()
-        .await
-        .map_err(|_| crate::errors::Error::UnableToGenerateCommitMessage)?;
+        println!("Response from {}: {}", model, response_text);  // Debug log
 
+        let groq_response: GroqResponse = serde_json::from_str(&response_text)
+            .map_err(|e| {
+                eprintln!("Failed to parse JSON for model {}: {}", model, e);
+                eprintln!("Response text: {}", response_text);
+                crate::errors::Error::UnableToGenerateCommitMessage
+            })?;
 
-    let groq_response: GroqResponse = serde_json::from_str(&response_text)
-        .map_err(|_| crate::errors::Error::UnableToGenerateCommitMessage)?;
+        all_messages.push(groq_response.choices[0].message.content.trim().to_string());
+    }
 
-    let messages: Vec<String> = groq_response.choices[0]
-        .message
-        .content
-        .split("---")
-        .map(|msg| msg.trim().to_string())
-        .filter(|msg| !msg.is_empty())
-        .collect();
-
-    Ok(messages)
+    Ok(all_messages)
 }
 
 #[derive(Debug, Deserialize)]
