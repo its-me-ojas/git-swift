@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'app/**' # Only trigger if files in the app folder change
 
 jobs:
   build:
@@ -12,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, archlinux-latest]
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -23,6 +25,9 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             package_type: mac
+          - os: archlinux-latest
+            target: x86_64-unknown-linux-gnu
+            package_type: archzst
 
     steps:
       - name: Checkout code
@@ -46,17 +51,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install dependencies (Linux)
+      - name: Install dependencies (Linux - Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y dpkg-dev libssl-dev pkg-config
 
+      - name: Install dependencies (Linux - Arch)
+        if: matrix.os == 'archlinux-latest'
+        run: |
+          sudo pacman -Syu --noconfirm
+          sudo pacman -S --needed --noconfirm base-devel openssl pkg-config zstd
+
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew update
-          brew install openssl@3 rustup-init pkg-config llvm
+          brew install openssl@3 rustup-init pkg-config llvm zstd
           echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
           echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@3)/lib" >> $GITHUB_ENV
           echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@3)/include" >> $GITHUB_ENV
@@ -69,6 +80,7 @@ jobs:
         run: |
           choco install wixtoolset -y
           choco install openssl -y
+          choco install zstd -y
 
 
       - name: Build Rust project (Windows/Linux)
@@ -87,8 +99,7 @@ jobs:
           OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
           OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
           OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
-          
-          
+
 
       - name: Package Debian (.deb)
         if: matrix.package_type == 'deb'
@@ -100,6 +111,38 @@ jobs:
 
         env:
           DEB_BUILD_OPTIONS: nocheck
+
+      - name: Package Arch Linux (.tar.zst)
+        if: matrix.package_type == 'archzst'
+        run: |
+          cargo install cargo-makepkg --force
+          cd app
+          # Create a basic PKGBUILD
+          echo "pkgname='gitswift'" > PKGBUILD
+          echo "pkgver=1.0" >> PKGBUILD
+          echo "pkgrel=1" >> PKGBUILD
+          echo "pkgdesc='A Git-Swift application'" >> PKGBUILD
+          echo "arch=('any')" >> PKGBUILD
+          echo "license=('MIT')" >> PKGBUILD
+          echo "depends=()" >> PKGBUILD
+          echo "makedepends=('rust')" >> PKGBUILD
+          echo "source=(\"gitswift-$pkgver.tar.gz::$(pwd)/gitswift-$pkgver.tar.gz\")" >> PKGBUILD
+          echo "sha256sums=('SKIP')" >> PKGBUILD
+          echo "" >> PKGBUILD
+          echo "package() {" >> PKGBUILD
+          echo "  install -Dm755 \"\$(pwd)/target/${{ matrix.target }}/release/gitswift\" \"\$pkgdir/usr/bin/gitswift\"" >> PKGBUILD
+          echo "}" >> PKGBUILD
+
+          # Create a dummy tar.gz for makepkg
+          mkdir -p gitswift-1.0
+          cp target/${{ matrix.target }}/release/gitswift gitswift-1.0/
+          tar -czvf gitswift-1.0.tar.gz gitswift-1.0
+
+          makepkg --nocheck --config "options=(!strip)" --compress zstd
+
+          mkdir -p artifacts
+          mv *.zst artifacts/
+          cd ..
 
       - name: Package Windows (.exe/.msi)
         if: matrix.package_type == 'windows'
@@ -119,7 +162,7 @@ jobs:
           mkdir -p ~/gitswift-installer/user/local/bin
           mkdir -p artifacts
           cp app/target/${{ matrix.target }}/release/gitswift ~/gitswift-installer/user/local/bin/
-          pkgbuild --identifier com.singhropar.gitswift --version 1.0 --install-location / --root ~/gitswift-installer artifacts/gitswift.pkg 
+          pkgbuild --identifier com.singhropar.gitswift --version 1.0 --install-location / --root ~/gitswift-installer artifacts/gitswift.pkg
         env:
           BUNDLE_ID: com.singhropar.gitswift
           BUNDLE_NAME: gitswift
