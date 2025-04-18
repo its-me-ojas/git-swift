@@ -85,6 +85,7 @@ The API key is stored in `~/.git-swift/config`. You can update it at any time by
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
+
 ## Author
 
 Ojas - [its-me-ojas](https://github.com/its-me-ojas)
